@@ -163,49 +163,132 @@ class Lexicon:
             self.tape.pos = pos
 
     def _comando(self):
-        # TODO
-        pass
+        _logger.debug('<comando>')
+        token = self._next_token()
+        if token == Keywords.READ or token == Keywords.WRITE:
+            token = self._next_token()
+            validate_symbol(token, '(')
+
+            self._get_ident()
+
+            token = self._next_token()
+            validate_symbol(token, ')')
+        elif token == Keywords.IF:
+            self._condicao()
+
+            token = self._next_token()
+            if not token == Keywords.THEN:
+                raise Keywords.THEN.wrong_token_err(token)
+
+            self._comandos()
+            self._pfalsa()
+
+            token = self._next_token()
+            validate_symbol(token, '$')
+        else:
+            validate_ident(token)
+
+            token = self._next_token()
+            validate_symbol(token, ':=')
+
+            self._expressao()
 
     def _condicao(self):
-        # TODO
-        pass
+        _logger.debug('<condicao>')
+        self._expressao()
+        self._relacao()
+        self._expressao()
 
     def _relacao(self):
-        # TODO
-        pass
+        _logger.debug('<relacao>')
+        token = self._next_token()
+        comps = {'=', '<>', '>=', '<=', '>', '<'}
+        if token.tipo != TokenType.SIMBOLO or token.valor not in comps:
+            raise CompilerSyntaxError.simples(
+                ' ou '.join(map(repr, comps)),
+                repr(token.valor))
 
     def _expressao(self):
-        # TODO
-        pass
+        _logger.debug('<expressao>')
+        self._termo()
+        self._outros_termos()
 
     def _termo(self):
-        # TODO
-        pass
+        _logger.debug('<termo>')
+        self._op_un()
+        self._fator()
+        self._mais_fatores()
 
     def _op_un(self):
-        # TODO
-        pass
+        _logger.debug('<op_un>')
+        pos = self.tape.pos
+        token = self._next_token()
+        if token != Token.simbolo('-'):
+            self.tape.pos = pos
 
     def _fator(self):
-        # TODO
-        pass
+        _logger.debug('<fator>')
+        token = self._next_token()
+
+        if token.tipo == TokenType.IDENTIFICADOR:
+            validate_ident(token)
+        elif token.tipo == TokenType.INTEIRO:
+            pass
+        elif token.tipo == TokenType.REAL:
+            pass
+        elif token == Token.simbolo('('):
+            self._expressao()
+
+            token = self._next_token()
+            validate_symbol(token, ')')
+        else:
+            raise CompilerSyntaxError(f'Valor inesperado: {token.valor!r}')
 
     def _outros_termos(self):
-        # TODO
-        pass
+        _logger.debug('<outros_termos>')
+        token = self._next_token(dont_move=True)
+        if token == Token.simbolo('+') or token == Token.simbolo('-'):
+            self._op_ad()
+            self._termo()
+            self._outros_termos()
 
     def _op_ad(self):
-        # TODO
-        pass
+        _logger.debug('<op_ad>')
+        token = self._next_token()
+        if token == Token.simbolo('+'):
+            pass
+        elif token == Token.simbolo('-'):
+            pass
+        else:
+            raise CompilerSyntaxError.simples(
+                f'{"+"!r} ou {"-"!r}',
+                repr(token.valor))
 
     def _mais_fatores(self):
-        # TODO
-        pass
+        _logger.debug('<mais_fatores>')
+        token = self._next_token(dont_move=True)
+        if token == Token.simbolo('*') or token == Token.simbolo('/'):
+            self._op_mul()
+            self._fator()
+            self._mais_fatores()
 
     def _op_mul(self):
-        # TODO
-        pass
+        _logger.debug('<op_mul>')
+        token = self._next_token()
+        if token == Token.simbolo('*'):
+            pass
+        elif token == Token.simbolo('/'):
+            pass
+        else:
+            raise CompilerSyntaxError.simples(
+                f'{"*"!r} ou {"/"!r}',
+                repr(token.valor))
 
     def _pfalsa(self):
-        # TODO
-        pass
+        _logger.debug('<pfalsa>')
+        pos = self.tape.pos
+        token = self._next_token()
+        if token == Keywords.ELSE:
+            self._comandos()
+        else:
+            self.tape.pos = pos
