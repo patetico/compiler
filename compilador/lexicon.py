@@ -1,9 +1,13 @@
+import logging
 from enum import Enum
 
 from .errors import CompilerSyntaxError
 from .tape import Tape
 from .token import Token, TokenType
 from .tokenizer import Tokenizer
+
+
+_logger = logging.getLogger(__name__)
 
 
 class Keywords(Enum):
@@ -59,6 +63,7 @@ class Lexicon:
             if not skip_whitespace or token.tipo != TokenType.WHITESPACE:
                 if dont_move:
                     self.tape.pos = pos
+                _logger.debug(token)
                 return token
 
     def _get_ident(self) -> Token:
@@ -67,6 +72,7 @@ class Lexicon:
         return token
 
     def _programa(self):
+        _logger.debug('<programa>')
         token = self._next_token()
         if not token == Keywords.PROGRAM.value:
             raise Keywords.PROGRAM.wrong_token_err(token)
@@ -79,33 +85,37 @@ class Lexicon:
         validate_symbol(token, '.')
 
     def _corpo(self):
+        _logger.debug('<corpo>')
         self._dc()
 
         token = self._next_token()
-        if not token == Keywords.BEGIN.value:
+        if not token == Keywords.BEGIN:
             raise Keywords.BEGIN.wrong_token_err(token)
 
         self._comandos()
 
         token = self._next_token()
-        if not token == Keywords.END.value:
+        if not token == Keywords.END:
             raise Keywords.END.wrong_token_err(token)
 
     def _dc(self):
+        _logger.debug('<dc>')
         token = self._next_token(dont_move=True)
-        if token == Keywords.REAL.value or token == Keywords.INTEGER.value:
+        if token == Keywords.REAL or token == Keywords.INTEGER:
             self._dc_v()
             self._mais_dc()
 
     def _mais_dc(self):
+        _logger.debug('<mais_dc>')
         pos = self.tape.pos
         token = self._next_token()
-        if token == Token.identificador(';'):
-            self._mais_dc()
+        if token == Token.simbolo(';'):
+            self._dc()
         else:
             self.tape.pos = pos
 
     def _dc_v(self):
+        _logger.debug('<dc_v>')
         self._tipo_var()
 
         token = self._next_token()
@@ -115,6 +125,7 @@ class Lexicon:
         self._variaveis()
 
     def _tipo_var(self):
+        _logger.debug('<tipo_var>')
         token = self._next_token()
         if not (token == Keywords.REAL or token == Keywords.INTEGER):
             raise CompilerSyntaxError.simples(
@@ -122,10 +133,12 @@ class Lexicon:
                 repr(token.valor))
 
     def _variaveis(self):
+        _logger.debug('<variaveis>')
         self._get_ident()
         self._mais_var()
 
     def _mais_var(self):
+        _logger.debug('<mais_var>')
         pos = self.tape.pos
         token = self._next_token()
 
@@ -135,10 +148,12 @@ class Lexicon:
             self.tape.pos = pos
 
     def _comandos(self):
-        self._comandos()
+        _logger.debug('<comandos>')
+        self._comando()
         self._mais_comandos()
 
     def _mais_comandos(self):
+        _logger.debug('<mais_comandos>')
         pos = self.tape.pos
         token = self._next_token()
 

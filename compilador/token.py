@@ -18,6 +18,9 @@ class Token:
         return f"Token<{self.tipo}, {self.valor!r}>"
 
     def __eq__(self, other):
+        if isinstance(other, Enum):
+            other = other.value
+
         if isinstance(other, Token):
             return self.tipo == other.tipo and self.valor == other.valor
         elif (isinstance(other, tuple) or isinstance(other, list)) and len(other) == 2:
