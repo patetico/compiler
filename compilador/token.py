@@ -6,6 +6,7 @@ class TokenType(Enum):
     INTEIRO = auto()
     REAL = auto()
     SIMBOLO = auto()
+    WHITESPACE = auto()
 
 
 class Token:
