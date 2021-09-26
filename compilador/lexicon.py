@@ -30,6 +30,20 @@ class Keywords(Enum):
         return CompilerSyntaxError.simples(repr(self.valor), repr(token.valor))
 
 
+def validate_ident(token: Token):
+    if not token.tipo == TokenType.IDENTIFICADOR:
+        raise CompilerSyntaxError.simples('identificador', repr(token.valor))
+
+    if any(token == kw.valor for kw in Keywords):
+        raise CompilerSyntaxError(
+            f'Palavra reservada não pode ser usada como identificador: {token.valor!r}')
+
+
+def validate_symbol(token: Token, symbol: str):
+    if not token == Token.simbolo(symbol):
+        raise CompilerSyntaxError.simples(repr(symbol), repr(token.valor))
+
+
 class Lexicon:
     def __init__(self, filepath: str):
         self.tape = Tape(filepath)
@@ -47,23 +61,22 @@ class Lexicon:
                     self.tape.pos = pos
                 return token
 
+    def _get_ident(self) -> Token:
+        token = self._next_token()
+        validate_ident(token)
+        return token
+
     def _programa(self):
         token = self._next_token()
         if not token == Keywords.PROGRAM.value:
             raise Keywords.PROGRAM.wrong_token_err(token)
 
-        token = self._next_token()
-        if not token.tipo == TokenType.IDENTIFICADOR:
-            raise CompilerSyntaxError.simples('identificador', repr(token.valor))
-        if any(token == kw for kw in Keywords):
-            raise CompilerSyntaxError(
-                f'Palavra reservada não pode ser usada como identificador: {token.valor!r}')
+        self._get_ident()
 
         self._corpo()
 
         token = self._next_token()
-        if not token == Token.simbolo('.'):
-            raise CompilerSyntaxError.simples(repr('.'), repr(token.valor))
+        validate_symbol(token, '.')
 
     def _corpo(self):
         self._dc()
@@ -109,20 +122,30 @@ class Lexicon:
                 repr(token.valor))
 
     def _variaveis(self):
-        # TODO
-        pass
+        self._get_ident()
+        self._mais_var()
 
     def _mais_var(self):
-        # TODO
-        pass
+        pos = self.tape.pos
+        token = self._next_token()
+
+        if token == Token.simbolo(','):
+            self._variaveis()
+        else:
+            self.tape.pos = pos
 
     def _comandos(self):
-        # TODO
-        pass
+        self._comandos()
+        self._mais_comandos()
 
     def _mais_comandos(self):
-        # TODO
-        pass
+        pos = self.tape.pos
+        token = self._next_token()
+
+        if token == Token.simbolo(';'):
+            self._comandos()
+        else:
+            self.tape.pos = pos
 
     def _comando(self):
         # TODO
