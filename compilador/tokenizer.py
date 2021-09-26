@@ -28,8 +28,6 @@ class Tokenizer:
         self._token_val = c = self.tape.get_char()
         if self.tape.is_num():
             return self._state1()
-        if c == '.':
-            return self._state2()
         elif self.tape.is_letra():
             return self._state4()
         elif c in set('=$()+-*/.;,'):
@@ -61,7 +59,7 @@ class Tokenizer:
 
         c = self.tape.next_char()
         if not self.tape.is_num():
-            raise CompilerSyntaxError.simples('dígito', c)
+            raise CompilerSyntaxError.simples('dígito', repr(c))
         return self._state3()
 
     def _state3(self):
@@ -86,7 +84,7 @@ class Tokenizer:
         _logger.debug('state 5')
 
         token = Token(TokenType.SIMBOLO, self._token_val)
-        return token
+        return self._end_state(token)
 
     def _state6(self):
         _logger.debug('state 6')
@@ -108,7 +106,11 @@ class Tokenizer:
         _logger.debug('state 8')
 
         while not self.tape.is_eof(1):
-            self._token_val += self.tape.next_char()
+            c = self.tape.get_char(1)
+            if c not in ' \t\n\r':
+                break
+            self._token_val += c
+            self.tape.next()
 
         token = Token(TokenType.WHITESPACE, self._token_val)
         return self._end_state(token)
