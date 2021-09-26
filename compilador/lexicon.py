@@ -72,6 +72,11 @@ class Lexicon:
         return token
 
     def _programa(self):
+        """
+        Implementa <programa>
+
+        <programa>  ->  program ident <corpo> .
+        """
         _logger.debug('<programa>')
         token = self._next_token()
         if not token == Keywords.PROGRAM.value:
@@ -85,6 +90,11 @@ class Lexicon:
         validate_symbol(token, '.')
 
     def _corpo(self):
+        """
+        Implementa <corpo>
+
+        <corpo>  ->  <dc> begin <comandos> end
+        """
         _logger.debug('<corpo>')
         self._dc()
 
@@ -99,6 +109,11 @@ class Lexicon:
             raise Keywords.END.wrong_token_err(token)
 
     def _dc(self):
+        """
+        Implementa <dc>
+
+        <dc>  ->  <dc_v> <mais_dc> | λ
+        """
         _logger.debug('<dc>')
         token = self._next_token(dont_move=True)
         if token == Keywords.REAL or token == Keywords.INTEGER:
@@ -106,6 +121,11 @@ class Lexicon:
             self._mais_dc()
 
     def _mais_dc(self):
+        """
+        Implementa <mais_dc>
+
+        <mais_dc>  ->  ; <dc> | λ
+        """
         _logger.debug('<mais_dc>')
         pos = self.tape.pos
         token = self._next_token()
@@ -115,6 +135,11 @@ class Lexicon:
             self.tape.pos = pos
 
     def _dc_v(self):
+        """
+        Implementa <dc_v>
+
+        <dc_v>  ->  <tipo_var> : <variaveis>
+        """
         _logger.debug('<dc_v>')
         self._tipo_var()
 
@@ -125,6 +150,11 @@ class Lexicon:
         self._variaveis()
 
     def _tipo_var(self):
+        """
+        Implementa <tipo_var>
+
+        <tipo_var>  ->  real | integer
+        """
         _logger.debug('<tipo_var>')
         token = self._next_token()
         if not (token == Keywords.REAL or token == Keywords.INTEGER):
@@ -133,11 +163,21 @@ class Lexicon:
                 repr(token.valor))
 
     def _variaveis(self):
+        """
+        Implementa <variaveis>
+
+        <variaveis>  ->  ident <mais_var>
+        """
         _logger.debug('<variaveis>')
         self._get_ident()
         self._mais_var()
 
     def _mais_var(self):
+        """
+        Implementa <mais_var>
+
+        <mais_var>  ->  , <variaveis> | λ
+        """
         _logger.debug('<mais_var>')
         pos = self.tape.pos
         token = self._next_token()
@@ -148,11 +188,21 @@ class Lexicon:
             self.tape.pos = pos
 
     def _comandos(self):
+        """
+        Implementa <comandos>
+
+        <comandos>  ->  <comando> <mais_comandos>
+        """
         _logger.debug('<comandos>')
         self._comando()
         self._mais_comandos()
 
     def _mais_comandos(self):
+        """
+        Implementa <mais_comandos>
+
+        <mais_comandos>  ->  ; <comandos> | λ
+        """
         _logger.debug('<mais_comandos>')
         pos = self.tape.pos
         token = self._next_token()
@@ -163,6 +213,15 @@ class Lexicon:
             self.tape.pos = pos
 
     def _comando(self):
+        """
+        Implementa <comando>
+
+        <comando>  ->  read (ident)
+                   |   write (ident)
+                   |   ident := <expressao>
+                   |   if <condicao> then <comandos> <pfalsa> $
+
+        """
         _logger.debug('<comando>')
         token = self._next_token()
         if token == Keywords.READ or token == Keywords.WRITE:
@@ -194,12 +253,22 @@ class Lexicon:
             self._expressao()
 
     def _condicao(self):
+        """
+        Implementa <condicao>
+
+        <condicao>  ->  <expressao> <relacao> <expressao>
+        """
         _logger.debug('<condicao>')
         self._expressao()
         self._relacao()
         self._expressao()
 
     def _relacao(self):
+        """
+        Implementa <relacao>
+
+        <relacao>  ->  = | <> | >= | <= | > | <
+        """
         _logger.debug('<relacao>')
         token = self._next_token()
         comps = {'=', '<>', '>=', '<=', '>', '<'}
@@ -209,17 +278,32 @@ class Lexicon:
                 repr(token.valor))
 
     def _expressao(self):
+        """
+        Implementa <expressao>
+
+        <expressao>  ->  <termo> <outros_termos>
+        """
         _logger.debug('<expressao>')
         self._termo()
         self._outros_termos()
 
     def _termo(self):
+        """
+        Implementa <termo>
+
+        <termo>  ->  <op_un> <fator> <mais_fatores>
+        """
         _logger.debug('<termo>')
         self._op_un()
         self._fator()
         self._mais_fatores()
 
     def _op_un(self):
+        """
+        Implementa <op_un>
+
+        <op_un>  ->  - | λ
+        """
         _logger.debug('<op_un>')
         pos = self.tape.pos
         token = self._next_token()
@@ -227,6 +311,14 @@ class Lexicon:
             self.tape.pos = pos
 
     def _fator(self):
+        """
+        Implementa <fator>
+
+        <fator>  ->  ident
+                 |   numero_int
+                 |   numero_real
+                 |   (<expressao>)
+        """
         _logger.debug('<fator>')
         token = self._next_token()
 
@@ -245,6 +337,11 @@ class Lexicon:
             raise CompilerSyntaxError(f'Valor inesperado: {token.valor!r}')
 
     def _outros_termos(self):
+        """
+        Implementa <outros_termos>
+
+        <outros_termos>  ->  <op_ad> <termo> <outros_termos> | λ
+        """
         _logger.debug('<outros_termos>')
         token = self._next_token(dont_move=True)
         if token == Token.simbolo('+') or token == Token.simbolo('-'):
@@ -253,6 +350,11 @@ class Lexicon:
             self._outros_termos()
 
     def _op_ad(self):
+        """
+        Implementa <op_ad>
+
+        <op_ad>  ->  + | -
+        """
         _logger.debug('<op_ad>')
         token = self._next_token()
         if token == Token.simbolo('+'):
@@ -265,6 +367,11 @@ class Lexicon:
                 repr(token.valor))
 
     def _mais_fatores(self):
+        """
+        Implementa <mais_fatores>
+
+        <mais_fatores>  ->  <op_mul> <fator> <mais_fatores>
+        """
         _logger.debug('<mais_fatores>')
         token = self._next_token(dont_move=True)
         if token == Token.simbolo('*') or token == Token.simbolo('/'):
@@ -273,6 +380,11 @@ class Lexicon:
             self._mais_fatores()
 
     def _op_mul(self):
+        """
+        Implementa <op_mul>
+
+        <op_mul>  ->  * | /
+        """
         _logger.debug('<op_mul>')
         token = self._next_token()
         if token == Token.simbolo('*'):
@@ -285,6 +397,11 @@ class Lexicon:
                 repr(token.valor))
 
     def _pfalsa(self):
+        """
+        Implementa <pfalsa>
+
+        <pfalsa>  ->  else <comandos> | λ
+        """
         _logger.debug('<pfalsa>')
         pos = self.tape.pos
         token = self._next_token()
