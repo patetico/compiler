@@ -2,7 +2,7 @@ import logging
 
 from .errors import CompilerSyntaxError
 from .tape import Tape
-from .token import Token, TokenType
+from .token import Token
 
 
 _logger = logging.getLogger(__name__)
@@ -51,7 +51,7 @@ class Tokenizer:
             self._token_val += self.tape.next_char()
             return self._state2()
 
-        token = Token(TokenType.INTEIRO, self._token_val)
+        token = Token.inteiro(self._token_val)
         return self._end_state(token)
 
     def _state2(self):
@@ -68,7 +68,7 @@ class Tokenizer:
         while self.tape.is_num(1):
             self._token_val += self.tape.next_char()
 
-        token = Token(TokenType.REAL, self._token_val)
+        token = Token.real(self._token_val)
         return self._end_state(token)
 
     def _state4(self):
@@ -77,13 +77,13 @@ class Tokenizer:
         while self.tape.is_num(1) or self.tape.is_letra(1):
             self._token_val += self.tape.next_char()
 
-        token = Token(TokenType.IDENTIFICADOR, self._token_val)
+        token = Token.identificador(self._token_val)
         return self._end_state(token)
 
     def _state5(self):
         _logger.debug('state 5')
 
-        token = Token(TokenType.SIMBOLO, self._token_val)
+        token = Token.simbolo(self._token_val)
         return self._end_state(token)
 
     def _state6(self):
@@ -112,7 +112,7 @@ class Tokenizer:
             self._token_val += c
             self.tape.next()
 
-        token = Token(TokenType.WHITESPACE, self._token_val)
+        token = Token.whitespace(self._token_val)
         return self._end_state(token)
 
     def _end_state(self, token: Token):

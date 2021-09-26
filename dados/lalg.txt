@@ -8,7 +8,7 @@
 <mais_dc>       ->  ; <dc>
                 |   λ
 
-<dc_v>          ->   <tipo_var> : <variaveis>
+<dc_v>          ->  <tipo_var> : <variaveis>
 
 <tipo_var>      ->  real
                 |   integer

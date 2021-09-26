@@ -25,3 +25,23 @@ class Token:
             return self.tipo == tipo and self.valor == valor
 
         return False
+
+    @classmethod
+    def identificador(cls, valor):
+        return cls(TokenType.IDENTIFICADOR, valor)
+
+    @classmethod
+    def inteiro(cls, valor):
+        return cls(TokenType.INTEIRO, valor)
+
+    @classmethod
+    def real(cls, valor):
+        return cls(TokenType.REAL, valor)
+
+    @classmethod
+    def simbolo(cls, valor):
+        return cls(TokenType.SIMBOLO, valor)
+
+    @classmethod
+    def whitespace(cls, valor):
+        return cls(TokenType.WHITESPACE, valor)
