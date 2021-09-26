@@ -5,13 +5,9 @@ class Tape:
         self.pos = 0
 
     def next(self):
-        if self.is_eof(1):
-            raise EOFError()
         self.pos += 1
 
     def back(self):
-        if self.is_eof(-1):
-            raise EOFError()
         self.pos -= 1
 
     def get_char(self, pos=0):
