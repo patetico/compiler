@@ -7,16 +7,16 @@ from .tokenizer import Tokenizer
 
 
 class Keywords(Enum):
-    PROGRAM = Token(TokenType.IDENTIFICADOR, 'program')
-    BEGIN = Token(TokenType.IDENTIFICADOR, 'begin')
-    END = Token(TokenType.IDENTIFICADOR, 'end')
-    REAL = Token(TokenType.IDENTIFICADOR, 'real')
-    INTEGER = Token(TokenType.IDENTIFICADOR, 'integer')
-    READ = Token(TokenType.IDENTIFICADOR, 'read')
-    WRITE = Token(TokenType.IDENTIFICADOR, 'write')
-    IF = Token(TokenType.IDENTIFICADOR, 'if')
-    THEN = Token(TokenType.IDENTIFICADOR, 'then')
-    ELSE = Token(TokenType.IDENTIFICADOR, 'else')
+    PROGRAM = Token.identificador('program')
+    BEGIN = Token.identificador('begin')
+    END = Token.identificador('end')
+    REAL = Token.identificador('real')
+    INTEGER = Token.identificador('integer')
+    READ = Token.identificador('read')
+    WRITE = Token.identificador('write')
+    IF = Token.identificador('if')
+    THEN = Token.identificador('then')
+    ELSE = Token.identificador('else')
 
     @property
     def valor(self):
@@ -25,6 +25,9 @@ class Keywords(Enum):
     @property
     def tipo(self):
         return self.value.tipo
+
+    def wrong_token_err(self, token: Token):
+        return CompilerSyntaxError.simples(repr(self.valor), repr(token.valor))
 
 
 class Lexicon:
@@ -35,18 +38,19 @@ class Lexicon:
     def parse(self):
         self._programa()
 
-    def _next_token(self, skip_whitespace=True):
+    def _next_token(self, skip_whitespace=True, dont_move=False):
+        pos = self.tape.pos
         while True:
             token = self.tokenizer.next_token()
             if not skip_whitespace or token.tipo != TokenType.WHITESPACE:
+                if dont_move:
+                    self.tape.pos = pos
                 return token
 
     def _programa(self):
         token = self._next_token()
         if not token == Keywords.PROGRAM.value:
-            raise CompilerSyntaxError.simples(
-                repr(Keywords.PROGRAM.valor),
-                repr(token.valor))
+            raise Keywords.PROGRAM.wrong_token_err(token)
 
         token = self._next_token()
         if not token.tipo == TokenType.IDENTIFICADOR:
@@ -58,28 +62,51 @@ class Lexicon:
         self._corpo()
 
         token = self._next_token()
-        if not token == Token(TokenType.SIMBOLO, '.'):
+        if not token == Token.simbolo('.'):
             raise CompilerSyntaxError.simples(repr('.'), repr(token.valor))
 
     def _corpo(self):
-        # TODO
-        pass
+        self._dc()
+
+        token = self._next_token()
+        if not token == Keywords.BEGIN.value:
+            raise Keywords.BEGIN.wrong_token_err(token)
+
+        self._comandos()
+
+        token = self._next_token()
+        if not token == Keywords.END.value:
+            raise Keywords.END.wrong_token_err(token)
 
     def _dc(self):
-        # TODO
-        pass
+        token = self._next_token(dont_move=True)
+        if token == Keywords.REAL.value or token == Keywords.INTEGER.value:
+            self._dc_v()
+            self._mais_dc()
 
     def _mais_dc(self):
-        # TODO
-        pass
+        pos = self.tape.pos
+        token = self._next_token()
+        if token == Token.identificador(';'):
+            self._mais_dc()
+        else:
+            self.tape.pos = pos
 
     def _dc_v(self):
-        # TODO
-        pass
+        self._tipo_var()
+
+        token = self._next_token()
+        if token != Token.simbolo(':'):
+            raise CompilerSyntaxError.simples(repr(':'), repr(token.valor))
+
+        self._variaveis()
 
     def _tipo_var(self):
-        # TODO
-        pass
+        token = self._next_token()
+        if not (token == Keywords.REAL or token == Keywords.INTEGER):
+            raise CompilerSyntaxError.simples(
+                f'{Keywords.REAL.valor!r} ou {Keywords.INTEGER.valor!r}',
+                repr(token.valor))
 
     def _variaveis(self):
         # TODO
