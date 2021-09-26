@@ -20,6 +20,10 @@ class Tape:
             raise EOFError()
         return self.code[pos]
 
+    def next_char(self):
+        self.next()
+        return self.get_char()
+
     def is_letra(self, pos=0):
         if self.is_eof(pos):
             return False
