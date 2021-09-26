@@ -47,72 +47,74 @@ class Tokenizer:
         _logger.debug('state 1')
 
         while self.tape.is_num(1):
-            self.tape.next()
-            self._token_val += self.tape.get_char()
+            self._token_val += self.tape.next_char()
 
         if not self.tape.is_eof(1) and self.tape.get_char(1) == '.':
-            self.tape.next()
-            self._token_val += self.tape.get_char()
+            self._token_val += self.tape.next_char()
             return self._state2()
 
         token = Token(TokenType.INTEIRO, self._token_val)
-        _logger.debug(token)
         return self._end_state(token)
 
     def _state2(self):
         _logger.debug('state 2')
 
-        # TODO
+        c = self.tape.next_char()
+        if not self.tape.is_num():
+            raise CompilerSyntaxError.simples('dígito', c)
+        return self._state3()
 
     def _state3(self):
         _logger.debug('state 3')
 
         while self.tape.is_num(1):
-            self.tape.next()
-            self._token_val += self.tape.get_char()
+            self._token_val += self.tape.next_char()
 
         token = Token(TokenType.REAL, self._token_val)
-        _logger.debug(token)
         return self._end_state(token)
 
     def _state4(self):
         _logger.debug('state 4')
 
         while self.tape.is_num(1) or self.tape.is_letra(1):
-            self.tape.next()
-            self._token_val += self.tape.get_char()
+            self._token_val += self.tape.next_char()
 
         token = Token(TokenType.IDENTIFICADOR, self._token_val)
-        _logger.debug(token)
         return self._end_state(token)
 
     def _state5(self):
         _logger.debug('state 5')
 
-        # TODO
+        token = Token(TokenType.SIMBOLO, self._token_val)
+        return token
 
     def _state6(self):
         _logger.debug('state 6')
 
-        # TODO
+        if self.tape.get_char(1) == '=':
+            self._token_val += self.tape.next_char()
+
+        return self._state5()
 
     def _state7(self):
         _logger.debug('state 7')
 
-        # TODO
+        if self.tape.get_char(1) in '=>':
+            self._token_val += self.tape.next_char()
+
+        return self._state5()
 
     def _state8(self):
         _logger.debug('state 8')
 
         while not self.tape.is_eof(1):
-            self.tape.next()
-            self._token_val += self.tape.get_char()
+            self._token_val += self.tape.next_char()
 
         token = Token(TokenType.WHITESPACE, self._token_val)
-        _logger.debug(token)
         return self._end_state(token)
 
     def _end_state(self, token: Token):
+        _logger.debug(token)
         self.state = 0
         self._token_val = None
         self.tape.next()
