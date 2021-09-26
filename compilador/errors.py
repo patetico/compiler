@@ -22,7 +22,7 @@ class CompilerSyntaxError(CompilerError):
 
     @classmethod
     def simples(cls, expected, found):
-        return cls(f'Esperado {expected!r}, encontrado {found!r}')
+        return cls(f'Esperado {expected}, encontrado {found}')
 
 
 class CompilerSemanticError(CompilerError):
