@@ -244,13 +244,18 @@ class Lexicon:
         _logger.debug('<comando>')
         token = self._next_token()
         if token == Keywords.READ or token == Keywords.WRITE:
+            fn = codegen.read if token == Keywords.READ else codegen.write
+
             token = self._next_token()
             validate_symbol(token, '(')
 
-            self._get_ident()
+            id_ = self._get_ident()
 
             token = self._next_token()
             validate_symbol(token, ')')
+
+            code = fn(id_.valor)
+            self.code.append(code)
         elif token == Keywords.IF:
             self._condicao()
 
