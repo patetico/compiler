@@ -10,6 +10,9 @@ class Tape:
     def back(self):
         self.pos -= 1
 
+    def context(self, freeze=True):
+        return TapeContext(self, freeze)
+
     def get_char(self, pos=0):
         pos += self.pos
         if self.is_eof():
@@ -41,3 +44,28 @@ class Tape:
     def is_eof(self, pos=0):
         pos += self.pos
         return pos >= len(self.code) or pos < 0
+
+
+class TapeContext:
+    def __init__(self, tape: Tape, freeze=True):
+        self.tape = tape
+        self._saved_pos = None
+        self._freeze = freeze
+
+    def __enter__(self):
+        self.save_pos()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self._freeze:
+            self.tape.pos = self._saved_pos
+
+    def save_pos(self):
+        self._saved_pos = self.tape.pos
+
+    def freeze(self):
+        self.save_pos()
+        self._freeze = True
+
+    def unfreeze(self):
+        self._freeze = False
