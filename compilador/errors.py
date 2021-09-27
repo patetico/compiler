@@ -1,3 +1,10 @@
+from compilador.token import Token
+
+
+def _invalid_token(token: Token):
+    return f'Token inválido: {token!r}'
+
+
 class CompilerError(Exception):
     def __init__(self, error_type, msg):
         # TODO: implement trace
@@ -24,7 +31,15 @@ class CompilerSyntaxError(CompilerError):
     def simples(cls, expected, found):
         return cls(f'Esperado {expected}, encontrado {found}')
 
+    @classmethod
+    def invalid_token(cls, token: Token):
+        return cls(_invalid_token(token))
+
 
 class CompilerSemanticError(CompilerError):
     def __init__(self, msg):
         super().__init__('SEMÂNTICO', msg)
+
+    @classmethod
+    def invalid_token(cls, token: Token):
+        return cls(_invalid_token(token))
