@@ -366,12 +366,19 @@ class Lexicon:
         <outros_termos>  ->  <op_ad> <termo> <outros_termos> | λ
         """
         _logger.debug('<outros_termos>')
-        with self.tape.context():
-            token = self._next_token()
-        if token == Token.simbolo('+') or token == Token.simbolo('-'):
-            self._op_ad()
-            self._termo()
-            self._outros_termos()
+
+        res = []
+
+        while True:
+            with self.tape.context():
+                token = self._next_token()
+
+            if token != Token.simbolo('+') and token != Token.simbolo('-'):
+                return res
+
+            op = self._op_ad()
+            termo = self._termo()
+            res.append((op, termo))
 
     def _op_ad(self):
         """
@@ -398,14 +405,20 @@ class Lexicon:
         """
         _logger.debug('<mais_fatores>')
 
-        with self.tape.context():
-            token = self._next_token()
-        if token == Token.simbolo('*') or token == Token.simbolo('/'):
-            self._op_mul()
-            self._fator()
-            self._mais_fatores()
+        res = []
 
-    def _op_mul(self):
+        while True:
+            with self.tape.context():
+                token = self._next_token()
+
+            if token != Token.simbolo('*') and token != Token.simbolo('/'):
+                return res
+
+            op = self._op_mul()
+            fator = self._fator()
+            res.append((op, fator))
+
+    def _op_mul(self) -> str:
         """
         Implementa <op_mul>
 
