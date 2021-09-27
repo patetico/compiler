@@ -22,9 +22,6 @@ class Tokenizer:
     def _state0(self):
         _logger.debug('state 0')
 
-        if self.tape.is_eof():
-            raise CompilerSyntaxError.simples('novo token', 'EOF')
-
         self._token_val = c = self.tape.get_char()
         if self.tape.is_num():
             return self._state1()

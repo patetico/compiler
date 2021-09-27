@@ -55,6 +55,12 @@ class Lexicon:
 
     def parse(self):
         self._programa()
+        try:
+            token = self._next_token()
+        except EOFError:
+            pass
+        else:
+            raise CompilerSyntaxError.simples('EOF', repr(token.valor))
 
     def _next_token(self, skip_whitespace=True, dont_move=False):
         pos = self.tape.pos
