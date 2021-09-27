@@ -23,29 +23,54 @@ def base(op, arg1='', arg2='', res=''):
     return code
 
 
-def alme(arg1, res):
-    return base('ALME', arg1, res=res)
+class IntermediateCode:
+    def __init__(self):
+        self.code = []
+        self._if_stack = []
 
+    def __pop_stack(self):
+        line, cond = self._if_stack.pop()
+        if cond is None:
+            self.code[line] = base('goto', line)
+        else:
+            self.code[line] = base('JF', cond, line)
 
-def read(res):
-    return base('read', res=res)
+    def op(self, op, arg1='', arg2='', res=''):
+        self.code.append(base(op, arg1, arg2, res))
 
+    def alme(self, arg1, res):
+        return self.code.append(base('ALME', arg1, res=res))
 
-def write(arg1):
-    return base('write', arg1)
+    def read(self, res):
+        return self.code.append(base('read', res=res))
 
+    def write(self, arg1):
+        return self.code.append(base('write', arg1))
 
-def goto(arg1):
-    return base('goto', arg1)
+    def goto(self, arg1):
+        return self.code.append(base('goto', arg1))
 
+    def jf(self, arg1, arg2):
+        return self.code.append(base('JF', arg1, arg2))
 
-def jf(arg1, arg2):
-    return base('JF', arg1, arg2)
+    def uminus(self, arg1, res):
+        return self.code.append(base('uminus', arg1, res=res))
 
+    def para(self, ):
+        return self.code.append(base('PARA'))
 
-def uminus(arg1, res):
-    return base('uminus', arg1, res=res)
+    def if_(self, cond: Token):
+        line = len(self.code)
+        self._if_stack.append((line, cond))
+        self.code.append(None)
 
+    def else_(self):
+        self.__pop_stack()
 
-def para():
-    return base('PARA')
+        line = len(self.code)
+        self._if_stack.append((line, None))
+
+        self.code.append(None)
+
+    def close_if(self):
+        self.__pop_stack()

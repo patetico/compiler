@@ -18,7 +18,7 @@ class Lexicon:
         self.tape = Tape(filepath)
         self.tokenizer = Tokenizer(self.tape)
         self.symbols = SymbolsTable()
-        self.code = []
+        self.code = codegen.IntermediateCode()
 
     def parse(self):
         self._programa()
@@ -158,8 +158,7 @@ class Lexicon:
 
         id_ = self._get_ident()
         self.symbols.add(id_, tipo)
-        code = codegen.alme('0.0' if tipo == TokenType.REAL else '0', id_.valor)
-        self.code.append(code)
+        self.code.alme('0.0' if tipo == TokenType.REAL else '0', id_.valor)
 
         self._mais_var(tipo)
 
@@ -216,7 +215,7 @@ class Lexicon:
 
         token = self._next_token()
         if token == Keywords.READ or token == Keywords.WRITE:
-            fn = codegen.read if token == Keywords.READ else codegen.write
+            fn = token
 
             token = self._next_token()
             validate_symbol(token, '(')
@@ -226,8 +225,10 @@ class Lexicon:
             token = self._next_token()
             validate_symbol(token, ')')
 
-            code = fn(id_.valor)
-            self.code.append(code)
+            if fn == Keywords.READ:
+                self.code.read(id_.valor)
+            else:
+                self.code.write(id_.valor)
         elif token == Keywords.IF:
             self._condicao()
 
@@ -250,7 +251,7 @@ class Lexicon:
 
             termo = self._expressao()
             self.validate_same_type_op(ident, termo, op)
-            codegen.base(op, termo, res=ident)
+            self.code.op(op, termo, res=ident)
 
     def _condicao(self) -> Token:
         """
@@ -265,7 +266,7 @@ class Lexicon:
 
         self.validate_same_type_op(arg1, arg2, op)
         tmp = self.symbols.make_temp(self.typeof(arg1))
-        codegen.base(op, arg1, arg2, tmp)
+        self.code.op(op, arg1, arg2, tmp)
         return tmp
 
     def _relacao(self) -> str:
@@ -306,7 +307,7 @@ class Lexicon:
         if signal == '-':
             type_ = self.symbols.typeof(fator)
             t = self.symbols.make_temp(type_)
-            codegen.uminus(fator.valor, t.valor)
+            self.code.uminus(fator.valor, t.valor)
             fator = t
 
         return self._mais_fatores(fator)
@@ -451,5 +452,5 @@ class Lexicon:
             self.validate_same_type_op(esq, dir_, op)
 
             t = self.symbols.make_temp(type_)
-            codegen.base(op, esq, dir_, t)
+            self.code.op(op, esq, dir_, t)
             esq = t
