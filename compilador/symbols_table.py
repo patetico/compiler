@@ -5,6 +5,7 @@ from compilador.token import Token, TokenType
 class SymbolsTable:
     def __init__(self):
         self.symbols = dict()
+        self._tmp_id = 1
 
     def has(self, name: str):
         return name in self.symbols
@@ -23,3 +24,11 @@ class SymbolsTable:
                 f'Tentativa de criar variável {name.valor!r} com tipo inválido {type_}')
 
         self.symbols[name.valor] = type_
+
+    def _make_temp(self, type_: TokenType) -> Token:
+        while self.has(f't{self._tmp_id}'):
+            self._tmp_id += 1
+
+        tmp = Token.identificador(f't{self._tmp_id}')
+        self.add(tmp, type_)
+        return tmp
