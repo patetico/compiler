@@ -15,6 +15,9 @@ class Token:
         self.valor = valor
 
     def __str__(self):
+        return repr(self.valor)
+
+    def __repr__(self):
         return f"Token<{self.tipo}, {self.valor!r}>"
 
     def __eq__(self, other):
@@ -28,6 +31,10 @@ class Token:
             return self.tipo == tipo and self.valor == valor
 
         return False
+
+    @property
+    def is_number(self):
+        return self.tipo in {TokenType.INTEIRO, TokenType.REAL}
 
     @classmethod
     def identificador(cls, valor):
