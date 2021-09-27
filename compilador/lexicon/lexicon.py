@@ -396,9 +396,11 @@ class Lexicon:
             dir_ = self._fator()
 
             if not self.same_types(esq, dir_):
-                raise CompilerSemanticError(
-                    'Operação não é permitida entre tipos diferentes:\n'
-                    f'\t{esq!r} {op} {dir_!r}')
+                msg = (
+                    'Operação não é permitida entre tipos diferentes '
+                    f'(<{self.typeof(esq).name}> e <{self.typeof(dir_).name}>):\n'
+                    f'\t{esq!r} {op} {dir_!r}\n')
+                raise CompilerSemanticError(msg)
 
             t = self.symbols.make_temp(type_)
             codegen.base(op, esq, dir_, t)
