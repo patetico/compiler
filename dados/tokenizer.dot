@@ -1,0 +1,29 @@
+digraph G {
+    rankdir = LR
+
+    node [shape=circle]; s0 s2 s6 s7
+    node [shape=doublecircle]
+
+    edge []
+
+    {rank = same; s1; s4; s5; s8}
+
+    s0 -> s1 [label="0-9"]
+    s1 -> s1 [label="0-9"]
+    s1 -> s2 [label="."]
+    s2 -> s3 [label="0-9"]
+    s3 -> s3 [label="0-9"]
+
+    s0 -> s4 [label="a-zA-Z"]
+    s4 -> s4 [label="a-zA-Z0-9"]
+
+    s0 -> s5 [label="=$()+-*/.;,"]
+
+    s0 -> s6 [label=">:"]
+    s6 -> s5 [label="=λ"]
+
+    s0 -> s7 [label="<"]
+    s7 -> s5 [label="=>λ"]
+
+    s0 -> s8 -> s8 [label="\n\n<space>,\\t,\\n,\\r"]
+}
