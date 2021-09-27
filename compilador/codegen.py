@@ -1,5 +1,13 @@
+import logging
+
+
+_logger = logging.getLogger(__name__)
+
+
 def base(op, arg1='', arg2='', res=''):
-    return f'{op};{arg1};{arg2};{res}'
+    code = f'{op};{arg1};{arg2};{res}'
+    _logger.debug(code)
+    return code
 
 
 def alme(arg1, res):
