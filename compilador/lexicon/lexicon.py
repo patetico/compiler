@@ -33,6 +33,14 @@ class Lexicon:
         if not self.symbols.has(var):
             raise CompilerSemanticError(f'Variável {var!r} não foi declarada.')
 
+    def validate_same_type_op(self, arg1, arg2, op):
+        if not self.same_types(arg1, arg2):
+            msg = (
+                'Operação não é permitida entre tipos diferentes '
+                f'(<{self.typeof(arg1).name}> e <{self.typeof(arg2).name}>):\n'
+                f'\t{arg1!r} {op} {arg2!r}\n')
+            raise CompilerSemanticError(msg)
+
     def _next_token(self, skip_whitespace=True):
         while True:
             token = self.tokenizer.next_token()
@@ -205,6 +213,7 @@ class Lexicon:
 
         """
         _logger.debug('<comando>')
+
         token = self._next_token()
         if token == Keywords.READ or token == Keywords.WRITE:
             fn = codegen.read if token == Keywords.READ else codegen.write
@@ -236,23 +245,30 @@ class Lexicon:
             ident = token
 
             token = self._next_token()
-            validate_symbol(token, ':=')
+            op = ':='
+            validate_symbol(token, op)
 
             termo = self._expressao()
-            codegen.base(':=', termo, res=ident)
+            self.validate_same_type_op(ident, termo, op)
+            codegen.base(op, termo, res=ident)
 
-    def _condicao(self):
+    def _condicao(self) -> Token:
         """
         Implementa <condicao>
 
         <condicao>  ->  <expressao> <relacao> <expressao>
         """
         _logger.debug('<condicao>')
-        self._expressao()
-        self._relacao()
-        self._expressao()
+        arg1 = self._expressao()
+        op = self._relacao()
+        arg2 = self._expressao()
 
-    def _relacao(self):
+        self.validate_same_type_op(arg1, arg2, op)
+        tmp = self.symbols.make_temp(self.typeof(arg1))
+        codegen.base(op, arg1, arg2, tmp)
+        return tmp
+
+    def _relacao(self) -> str:
         """
         Implementa <relacao>
 
@@ -263,6 +279,7 @@ class Lexicon:
         token = self._next_token()
         comps = {'=', '<>', '>=', '<=', '>', '<'}
         has_token(comps, token, True)
+        return token.valor
 
     def _expressao(self) -> Token:
         """
@@ -345,7 +362,7 @@ class Lexicon:
 
         return self.__do_add_or_mult('+-', termo, self._op_ad, self._termo)
 
-    def _op_ad(self):
+    def _op_ad(self) -> str:
         """
         Implementa <op_ad>
 
@@ -431,12 +448,7 @@ class Lexicon:
             op = fn_op()
             dir_ = fn_dir()
 
-            if not self.same_types(esq, dir_):
-                msg = (
-                    'Operação não é permitida entre tipos diferentes '
-                    f'(<{self.typeof(esq).name}> e <{self.typeof(dir_).name}>):\n'
-                    f'\t{esq!r} {op} {dir_!r}\n')
-                raise CompilerSemanticError(msg)
+            self.validate_same_type_op(esq, dir_, op)
 
             t = self.symbols.make_temp(type_)
             codegen.base(op, esq, dir_, t)
