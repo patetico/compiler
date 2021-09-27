@@ -20,7 +20,7 @@ class Lexicon:
         self.symbols = SymbolsTable()
         self.code = codegen.IntermediateCode()
 
-    def parse(self):
+    def parse(self) -> [str]:
         self._programa()
         try:
             token = self._next_token()
@@ -28,6 +28,8 @@ class Lexicon:
             pass
         else:
             raise CompilerSyntaxError.simples('EOF', token)
+
+        return self.code.code
 
     def validate_var(self, var):
         if not self.symbols.has(var):
@@ -70,6 +72,7 @@ class Lexicon:
 
         token = self._next_token()
         validate_symbol(token, '.')
+        self.code.para()
 
     def _corpo(self):
         """
@@ -230,14 +233,16 @@ class Lexicon:
             else:
                 self.code.write(id_.valor)
         elif token == Keywords.IF:
-            self._condicao()
+            cond = self._condicao()
 
             token = self._next_token()
             if not token == Keywords.THEN:
                 raise Keywords.THEN.wrong_token_err(token)
 
+            self.code.if_(cond)
             self._comandos()
             self._pfalsa()
+            self.code.close_if()
 
             token = self._next_token()
             validate_symbol(token, '$')
@@ -409,6 +414,7 @@ class Lexicon:
             token = self._next_token()
             if token == Keywords.ELSE:
                 tape_state.unfreeze()
+                self.code.else_()
                 self._comandos()
 
     def same_types(self, var1, var2):

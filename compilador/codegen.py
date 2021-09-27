@@ -11,6 +11,9 @@ def _reduce_to_arg(var) -> str:
     if isinstance(var, Token) and var.is_number:
         return var.valor
 
+    if isinstance(var, int):
+        return str(var)
+
     return normalize_name(var)
 
 
@@ -30,10 +33,11 @@ class IntermediateCode:
 
     def __pop_stack(self):
         line, cond = self._if_stack.pop()
+        next_line = len(self.code)
         if cond is None:
-            self.code[line] = base('goto', line)
+            self.code[line] = base('goto', next_line)
         else:
-            self.code[line] = base('JF', cond, line)
+            self.code[line] = base('JF', cond, next_line)
 
     def op(self, op, arg1='', arg2='', res=''):
         self.code.append(base(op, arg1, arg2, res))
@@ -65,12 +69,10 @@ class IntermediateCode:
         self.code.append(None)
 
     def else_(self):
-        self.__pop_stack()
-
         line = len(self.code)
-        self._if_stack.append((line, None))
-
         self.code.append(None)
+        self.__pop_stack()
+        self._if_stack.append((line, None))
 
     def close_if(self):
         self.__pop_stack()
