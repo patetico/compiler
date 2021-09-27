@@ -1,0 +1,65 @@
+<programa>      ->  program ident <corpo> . { code("PARA", "", "", "") }
+
+<corpo>         ->  <dc> begin <comandos> end
+
+<dc>            ->  <dc_v> <mais_dc>
+                |   λ
+
+<mais_dc>       ->  ; <dc>
+                |   λ
+
+<dc_v>          ->  <tipo_var> { variaveis.esq = tipo_var.dir } : <variaveis> { dc_v.dir = variaveis.dir }
+
+<tipo_var>      ->  real    { tipo_var.dir = real    }
+                |   integer { tipo_var.dir = integer }
+
+<variaveis>     ->  ident { code("ALME", variaveis.esq == real ? 0.0 : 0, "", ident) } { mais_var.esq = variaveis.esq } <mais_var>
+
+<mais_var>      ->  , { variaveis.esq = mais_var.esq } <variaveis>
+                |   λ
+
+<comandos>      ->  <comando> <mais_comandos>
+
+<mais_comandos> ->  ; <comandos>
+                |   λ
+
+<comando>       ->  read (ident)  { code("read", "", "", ident) }
+                |   write (ident) { code("write", ident, "", "") }
+                |   ident := <expressao>  { tmp = makeTemp() }  { code(":=", ident, expressao.dir, tmp) }
+                |   if <condicao> then <comandos> <pfalsa> $
+							
+<condicao>      ->  <expressao> <relacao> <expressao>
+
+<relacao>       ->  =   { relacao.dir = "="  }
+                |   <>  { relacao.dir = "<>" }
+                |   >=  { relacao.dir = ">=" }
+                |   <=  { relacao.dir = "<=" }
+                |   >   { relacao.dir = ">"  }
+                |   <   { relacao.dir = "<"  }
+
+<expressao>     ->  <termo> <outros_termos>
+
+<termo>         ->  <op_un> <fator> <mais_fatores>
+
+<op_un>         ->  -
+                |   λ
+
+<fator>         ->  ident         { fator.dir = ident         }
+                |   numero_int    { fator.dir = numero_int    }
+                |   numero_real   { fator.dir = numero_real   }
+                |   (<expressao>) { fator.dir = expressao.dir }
+
+<outros_termos> ->  <op_ad> { termo.esq = op_ad.dir } <termo> { outros_termos.esq = termos.dir } <outros_termos> { outros_termos.dir = outros_termos.esq }
+                |   λ { outros_termos.dir = outros_termos.esq }
+
+<op_ad>         ->  + { op_ad = "+" }
+                |   - { op_ad = "-" }
+
+<mais_fatores>  ->  <op_mul> { fator.esq = op_mul.dir } <fator> { mais_fatores.esq = fator.dir } <mais_fatores> { mais_fatores.dir = mais_fatores.esq }
+                |   λ { mais_fatores.dir = mais_fatores.esq }
+
+<op_mul>        ->  * { op_mul = "*" }
+                |   / { op_mul = "/" }
+
+<pfalsa>        ->  else <comandos>
+                |   λ

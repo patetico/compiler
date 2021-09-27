@@ -17,3 +17,5 @@ Os estados são mapeados aos seguintes tipos:
 | s4     | IDENTIFIER |
 | s5     | SYMBOL     |
 | s8     | WHITESPACE |
+
+Mais informações sobre a linguagem estão disponíveis na pasta [dados](/dados)
