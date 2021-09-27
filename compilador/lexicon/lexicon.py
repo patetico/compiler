@@ -1,12 +1,12 @@
 import logging
 from enum import Enum
 
-from . import codegen
-from .errors import CompilerSemanticError, CompilerSyntaxError
-from .symbols_table import SymbolsTable
-from .tape import Tape
-from .token import Token, TokenType
-from .tokenizer import Tokenizer
+from .. import codegen
+from ..errors import CompilerSemanticError, CompilerSyntaxError
+from ..symbols_table import SymbolsTable
+from ..tape import Tape
+from ..token import Token, TokenType
+from ..tokenizer import Tokenizer
 
 
 _logger = logging.getLogger(__name__)
