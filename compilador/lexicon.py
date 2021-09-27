@@ -2,7 +2,7 @@ import logging
 from enum import Enum
 
 from . import codegen
-from .errors import CompilerSyntaxError
+from .errors import CompilerSemanticError, CompilerSyntaxError
 from .symbols_table import SymbolsTable
 from .tape import Tape
 from .token import Token, TokenType
@@ -24,30 +24,22 @@ class Keywords(Enum):
     THEN = Token.identificador('then')
     ELSE = Token.identificador('else')
 
-    @property
-    def valor(self):
-        return self.value.valor
-
-    @property
-    def tipo(self):
-        return self.value.tipo
-
     def wrong_token_err(self, token: Token):
-        return CompilerSyntaxError.simples(repr(self.valor), repr(token.valor))
+        return CompilerSyntaxError.simples(self.value, token)
 
 
 def validate_ident(token: Token):
     if not token.tipo == TokenType.IDENTIFICADOR:
-        raise CompilerSyntaxError.simples('identificador', repr(token.valor))
+        raise CompilerSyntaxError.simples('identificador', token)
 
-    if any(token == kw.valor for kw in Keywords):
+    if any(token == kw.value for kw in Keywords):
         raise CompilerSyntaxError(
-            f'Palavra reservada não pode ser usada como identificador: {token.valor!r}')
+            f'Palavra reservada não pode ser usada como identificador: {token}')
 
 
 def validate_symbol(token: Token, symbol: str):
     if not token == Token.simbolo(symbol):
-        raise CompilerSyntaxError.simples(repr(symbol), repr(token.valor))
+        raise CompilerSyntaxError.simples(repr(symbol), token)
 
 
 class Lexicon:
@@ -64,7 +56,11 @@ class Lexicon:
         except EOFError:
             pass
         else:
-            raise CompilerSyntaxError.simples('EOF', repr(token.valor))
+            raise CompilerSyntaxError.simples('EOF', token)
+
+    def validate_var(self, var):
+        if not self.symbols.has(var):
+            raise CompilerSemanticError(f'Variável {var!r} não foi declarada.')
 
     def _next_token(self, skip_whitespace=True):
         while True:
@@ -152,8 +148,7 @@ class Lexicon:
         tipo = self._tipo_var()
 
         token = self._next_token()
-        if token != Token.simbolo(':'):
-            raise CompilerSyntaxError.simples(repr(':'), repr(token.valor))
+        validate_symbol(token, ':')
 
         self._variaveis(tipo)
 
@@ -171,8 +166,8 @@ class Lexicon:
             return TokenType.INTEIRO
         else:
             raise CompilerSyntaxError.simples(
-                f'{Keywords.REAL.valor!r} ou {Keywords.INTEGER.valor!r}',
-                repr(token.valor))
+                f'{Keywords.REAL.value} ou {Keywords.INTEGER.value}',
+                token)
 
     def _variaveis(self, tipo: TokenType):
         """
@@ -296,7 +291,7 @@ class Lexicon:
         if token.tipo != TokenType.SIMBOLO or token.valor not in comps:
             raise CompilerSyntaxError.simples(
                 ' ou '.join(map(repr, comps)),
-                repr(token.valor))
+                token)
 
     def _expressao(self):
         """
@@ -316,9 +311,17 @@ class Lexicon:
         <termo>  ->  <op_un> <fator> <mais_fatores>
         """
         _logger.debug('<termo>')
-        self._op_un()
-        self._fator()
-        self._mais_fatores()
+
+        signal = self._op_un()
+        fator = self._fator()
+
+        if signal == '-':
+            type_ = self.symbols.typeof(fator)
+            t = self.symbols.make_temp(type_)
+            codegen.uminus(fator.valor, t.valor)
+            fator = t
+
+        return self._mais_fatores(fator)
 
     def _op_un(self):
         """
@@ -332,8 +335,10 @@ class Lexicon:
             token = self._next_token()
             if token == Token.simbolo('-'):
                 tape_state.unfreeze()
+                return '-'
+        return None
 
-    def _fator(self):
+    def _fator(self) -> Token:
         """
         Implementa <fator>
 
@@ -343,21 +348,21 @@ class Lexicon:
                  |   (<expressao>)
         """
         _logger.debug('<fator>')
-        token = self._next_token()
+
+        res = token = self._next_token()
 
         if token.tipo == TokenType.IDENTIFICADOR:
             validate_ident(token)
-        elif token.tipo == TokenType.INTEIRO:
-            pass
-        elif token.tipo == TokenType.REAL:
-            pass
+            self.validate_var(token)
         elif token == Token.simbolo('('):
-            self._expressao()
+            res = self._expressao()
 
             token = self._next_token()
             validate_symbol(token, ')')
-        else:
-            raise CompilerSyntaxError(f'Valor inesperado: {token.valor!r}')
+        elif not token.is_number:
+            raise CompilerSyntaxError.invalid_token(token)
+
+        return res
 
     def _outros_termos(self):
         """
@@ -393,11 +398,9 @@ class Lexicon:
         elif token == Token.simbolo('-'):
             pass
         else:
-            raise CompilerSyntaxError.simples(
-                f'{"+"!r} ou {"-"!r}',
-                repr(token.valor))
+            raise CompilerSyntaxError.simples(f'{"+"!r} ou {"-"!r}', token)
 
-    def _mais_fatores(self):
+    def _mais_fatores(self, fator: Token) -> Token:
         """
         Implementa <mais_fatores>
 
@@ -405,18 +408,35 @@ class Lexicon:
         """
         _logger.debug('<mais_fatores>')
 
-        res = []
+        if fator.tipo == TokenType.IDENTIFICADOR:
+            if not self.symbols.has(fator):
+                raise CompilerSemanticError(f'Identificador desconhecido: {fator}')
+            type_ = self.symbols.typeof(fator)
+        elif fator.is_number:
+            type_ = fator.tipo
+        else:
+            raise CompilerSemanticError.invalid_token(fator)
+
+        esq = fator
 
         while True:
             with self.tape.context():
                 token = self._next_token()
 
             if token != Token.simbolo('*') and token != Token.simbolo('/'):
-                return res
+                return esq
 
             op = self._op_mul()
-            fator = self._fator()
-            res.append((op, fator))
+            dir_ = self._fator()
+
+            if not self.same_types(esq, dir_):
+                raise CompilerSemanticError(
+                    'Operação não é permitida entre tipos diferentes:\n'
+                    f'\t{esq!r} {op} {dir_!r}')
+
+            t = self.symbols.make_temp(type_)
+            codegen.base(op, esq, dir_, t)
+            esq = t
 
     def _op_mul(self) -> str:
         """
@@ -431,10 +451,8 @@ class Lexicon:
             return '*'
         elif token == Token.simbolo('/'):
             return '/'
-        else:
-            raise CompilerSyntaxError.simples(
-                f'{"*"!r} ou {"/"!r}',
-                repr(token.valor))
+
+        raise CompilerSyntaxError.simples(f'{"*"!r} ou {"/"!r}', token)
 
     def _pfalsa(self):
         """
@@ -449,3 +467,13 @@ class Lexicon:
             if token == Keywords.ELSE:
                 tape_state.unfreeze()
                 self._comandos()
+
+    def same_types(self, var1, var2):
+        return self.typeof(var1) == self.typeof(var2)
+
+    def typeof(self, var):
+        if isinstance(var, Token) and var.is_number:
+            return var.tipo
+
+        self.validate_var(var)
+        return self.symbols.typeof(var)
