@@ -1,6 +1,6 @@
 import logging
 
-from .helpers import validate_ident, validate_symbol
+from .helpers import has_token, validate_ident, validate_symbol
 from .keywords import Keywords
 from .. import codegen
 from ..errors import CompilerSemanticError, CompilerSyntaxError
@@ -257,12 +257,10 @@ class Lexicon:
         <relacao>  ->  = | <> | >= | <= | > | <
         """
         _logger.debug('<relacao>')
+
         token = self._next_token()
         comps = {'=', '<>', '>=', '<=', '>', '<'}
-        if token.tipo != TokenType.SIMBOLO or token.valor not in comps:
-            raise CompilerSyntaxError.simples(
-                ' ou '.join(map(repr, comps)),
-                token)
+        has_token(comps, token, True)
 
     def _expressao(self):
         """
@@ -349,7 +347,7 @@ class Lexicon:
             with self.tape.context():
                 token = self._next_token()
 
-            if token != Token.simbolo('+') and token != Token.simbolo('-'):
+            if not has_token('+-', token):
                 return res
 
             op = self._op_ad()
@@ -363,13 +361,10 @@ class Lexicon:
         <op_ad>  ->  + | -
         """
         _logger.debug('<op_ad>')
+
         token = self._next_token()
-        if token == Token.simbolo('+'):
-            pass
-        elif token == Token.simbolo('-'):
-            pass
-        else:
-            raise CompilerSyntaxError.simples(f'{"+"!r} ou {"-"!r}', token)
+        has_token('+-', token, True)
+        return token.valor
 
     def _mais_fatores(self, fator: Token) -> Token:
         """
@@ -394,7 +389,7 @@ class Lexicon:
             with self.tape.context():
                 token = self._next_token()
 
-            if token != Token.simbolo('*') and token != Token.simbolo('/'):
+            if not has_token('*/', token):
                 return esq
 
             op = self._op_mul()
@@ -418,12 +413,8 @@ class Lexicon:
         _logger.debug('<op_mul>')
 
         token = self._next_token()
-        if token == Token.simbolo('*'):
-            return '*'
-        elif token == Token.simbolo('/'):
-            return '/'
-
-        raise CompilerSyntaxError.simples(f'{"*"!r} ou {"/"!r}', token)
+        has_token('*/', token, True)
+        return token.valor
 
     def _pfalsa(self):
         """
