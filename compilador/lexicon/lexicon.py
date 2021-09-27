@@ -233,11 +233,13 @@ class Lexicon:
             validate_symbol(token, '$')
         else:
             validate_ident(token)
+            ident = token
 
             token = self._next_token()
             validate_symbol(token, ':=')
 
-            self._expressao()
+            termo = self._expressao()
+            codegen.base(':=', termo, res=ident)
 
     def _condicao(self):
         """
@@ -262,7 +264,7 @@ class Lexicon:
         comps = {'=', '<>', '>=', '<=', '>', '<'}
         has_token(comps, token, True)
 
-    def _expressao(self):
+    def _expressao(self) -> Token:
         """
         Implementa <expressao>
 
@@ -271,7 +273,7 @@ class Lexicon:
         _logger.debug('<expressao>')
 
         termo = self._termo()
-        self._outros_termos(termo)
+        return self._outros_termos(termo)
 
     def _termo(self) -> Token:
         """
