@@ -18,7 +18,7 @@ class Token:
         return repr(self.valor)
 
     def __repr__(self):
-        return f"Token<{self.tipo}, {self.valor!r}>"
+        return f"Token<{self.tipo.name}, {self.valor!r}>"
 
     def __eq__(self, other):
         if isinstance(other, Enum):
