@@ -66,13 +66,10 @@ class Lexicon:
         else:
             raise CompilerSyntaxError.simples('EOF', repr(token.valor))
 
-    def _next_token(self, skip_whitespace=True, dont_move=False):
-        pos = self.tape.pos
+    def _next_token(self, skip_whitespace=True):
         while True:
             token = self.tokenizer.next_token()
             if not skip_whitespace or token.tipo != TokenType.WHITESPACE:
-                if dont_move:
-                    self.tape.pos = pos
                 _logger.debug(token)
                 return token
 
@@ -125,7 +122,8 @@ class Lexicon:
         <dc>  ->  <dc_v> <mais_dc> | λ
         """
         _logger.debug('<dc>')
-        token = self._next_token(dont_move=True)
+        with self.tape.context():
+            token = self._next_token()
         if token == Keywords.REAL or token == Keywords.INTEGER:
             self._dc_v()
             self._mais_dc()
@@ -137,12 +135,12 @@ class Lexicon:
         <mais_dc>  ->  ; <dc> | λ
         """
         _logger.debug('<mais_dc>')
-        pos = self.tape.pos
-        token = self._next_token()
-        if token == Token.simbolo(';'):
-            self._dc()
-        else:
-            self.tape.pos = pos
+
+        with self.tape.context() as tape_state:
+            token = self._next_token()
+            if token == Token.simbolo(';'):
+                tape_state.unfreeze()
+                self._dc()
 
     def _dc_v(self):
         """
@@ -198,13 +196,12 @@ class Lexicon:
         <mais_var>  ->  , <variaveis> | λ
         """
         _logger.debug('<mais_var>')
-        pos = self.tape.pos
-        token = self._next_token()
 
-        if token == Token.simbolo(','):
-            self._variaveis(tipo)
-        else:
-            self.tape.pos = pos
+        with self.tape.context() as tape_state:
+            token = self._next_token()
+            if token == Token.simbolo(','):
+                tape_state.unfreeze()
+                self._variaveis(tipo)
 
     def _comandos(self):
         """
@@ -223,13 +220,13 @@ class Lexicon:
         <mais_comandos>  ->  ; <comandos> | λ
         """
         _logger.debug('<mais_comandos>')
-        pos = self.tape.pos
-        token = self._next_token()
 
-        if token == Token.simbolo(';'):
-            self._comandos()
-        else:
-            self.tape.pos = pos
+        with self.tape.context() as tape_state:
+            token = self._next_token()
+
+            if token == Token.simbolo(';'):
+                tape_state.unfreeze()
+                self._comandos()
 
     def _comando(self):
         """
@@ -308,6 +305,7 @@ class Lexicon:
         <expressao>  ->  <termo> <outros_termos>
         """
         _logger.debug('<expressao>')
+
         self._termo()
         self._outros_termos()
 
@@ -329,10 +327,11 @@ class Lexicon:
         <op_un>  ->  - | λ
         """
         _logger.debug('<op_un>')
-        pos = self.tape.pos
-        token = self._next_token()
-        if token != Token.simbolo('-'):
-            self.tape.pos = pos
+
+        with self.tape.context() as tape_state:
+            token = self._next_token()
+            if token == Token.simbolo('-'):
+                tape_state.unfreeze()
 
     def _fator(self):
         """
@@ -367,7 +366,8 @@ class Lexicon:
         <outros_termos>  ->  <op_ad> <termo> <outros_termos> | λ
         """
         _logger.debug('<outros_termos>')
-        token = self._next_token(dont_move=True)
+        with self.tape.context():
+            token = self._next_token()
         if token == Token.simbolo('+') or token == Token.simbolo('-'):
             self._op_ad()
             self._termo()
@@ -397,7 +397,9 @@ class Lexicon:
         <mais_fatores>  ->  <op_mul> <fator> <mais_fatores>
         """
         _logger.debug('<mais_fatores>')
-        token = self._next_token(dont_move=True)
+
+        with self.tape.context():
+            token = self._next_token()
         if token == Token.simbolo('*') or token == Token.simbolo('/'):
             self._op_mul()
             self._fator()
@@ -410,11 +412,12 @@ class Lexicon:
         <op_mul>  ->  * | /
         """
         _logger.debug('<op_mul>')
+
         token = self._next_token()
         if token == Token.simbolo('*'):
-            pass
+            return '*'
         elif token == Token.simbolo('/'):
-            pass
+            return '/'
         else:
             raise CompilerSyntaxError.simples(
                 f'{"*"!r} ou {"/"!r}',
@@ -427,9 +430,9 @@ class Lexicon:
         <pfalsa>  ->  else <comandos> | λ
         """
         _logger.debug('<pfalsa>')
-        pos = self.tape.pos
-        token = self._next_token()
-        if token == Keywords.ELSE:
-            self._comandos()
-        else:
-            self.tape.pos = pos
+
+        with self.tape.context() as tape_state:
+            token = self._next_token()
+            if token == Keywords.ELSE:
+                tape_state.unfreeze()
+                self._comandos()
