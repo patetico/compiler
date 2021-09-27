@@ -1,6 +1,7 @@
 import logging
-from enum import Enum
 
+from .helpers import validate_ident, validate_symbol
+from .keywords import Keywords
 from .. import codegen
 from ..errors import CompilerSemanticError, CompilerSyntaxError
 from ..symbols_table import SymbolsTable
@@ -10,36 +11,6 @@ from ..tokenizer import Tokenizer
 
 
 _logger = logging.getLogger(__name__)
-
-
-class Keywords(Enum):
-    PROGRAM = Token.identificador('program')
-    BEGIN = Token.identificador('begin')
-    END = Token.identificador('end')
-    REAL = Token.identificador('real')
-    INTEGER = Token.identificador('integer')
-    READ = Token.identificador('read')
-    WRITE = Token.identificador('write')
-    IF = Token.identificador('if')
-    THEN = Token.identificador('then')
-    ELSE = Token.identificador('else')
-
-    def wrong_token_err(self, token: Token):
-        return CompilerSyntaxError.simples(self.value, token)
-
-
-def validate_ident(token: Token):
-    if not token.tipo == TokenType.IDENTIFICADOR:
-        raise CompilerSyntaxError.simples('identificador', token)
-
-    if any(token == kw.value for kw in Keywords):
-        raise CompilerSyntaxError(
-            f'Palavra reservada não pode ser usada como identificador: {token}')
-
-
-def validate_symbol(token: Token, symbol: str):
-    if not token == Token.simbolo(symbol):
-        raise CompilerSyntaxError.simples(repr(symbol), token)
 
 
 class Lexicon:

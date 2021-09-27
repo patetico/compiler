@@ -1,5 +1,5 @@
-from compilador.errors import CompilerSemanticError
-from compilador.token import Token, TokenType
+from .errors import CompilerSemanticError
+from .token import Token, TokenType
 
 
 def normalize_name(name):
