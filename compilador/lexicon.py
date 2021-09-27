@@ -1,7 +1,9 @@
 import logging
 from enum import Enum
 
+from . import codegen
 from .errors import CompilerSyntaxError
+from .symbols_table import SymbolsTable
 from .tape import Tape
 from .token import Token, TokenType
 from .tokenizer import Tokenizer
@@ -52,6 +54,8 @@ class Lexicon:
     def __init__(self, filepath: str):
         self.tape = Tape(filepath)
         self.tokenizer = Tokenizer(self.tape)
+        self.symbols = SymbolsTable()
+        self.code = []
 
     def parse(self):
         self._programa()
@@ -147,15 +151,15 @@ class Lexicon:
         <dc_v>  ->  <tipo_var> : <variaveis>
         """
         _logger.debug('<dc_v>')
-        self._tipo_var()
+        tipo = self._tipo_var()
 
         token = self._next_token()
         if token != Token.simbolo(':'):
             raise CompilerSyntaxError.simples(repr(':'), repr(token.valor))
 
-        self._variaveis()
+        self._variaveis(tipo)
 
-    def _tipo_var(self):
+    def _tipo_var(self) -> TokenType:
         """
         Implementa <tipo_var>
 
@@ -163,22 +167,31 @@ class Lexicon:
         """
         _logger.debug('<tipo_var>')
         token = self._next_token()
-        if not (token == Keywords.REAL or token == Keywords.INTEGER):
+        if token == Keywords.REAL:
+            return TokenType.REAL
+        elif token == Keywords.INTEGER:
+            return TokenType.INTEIRO
+        else:
             raise CompilerSyntaxError.simples(
                 f'{Keywords.REAL.valor!r} ou {Keywords.INTEGER.valor!r}',
                 repr(token.valor))
 
-    def _variaveis(self):
+    def _variaveis(self, tipo: TokenType):
         """
         Implementa <variaveis>
 
         <variaveis>  ->  ident <mais_var>
         """
         _logger.debug('<variaveis>')
-        self._get_ident()
-        self._mais_var()
 
-    def _mais_var(self):
+        id_ = self._get_ident()
+        self.symbols.add(id_, tipo)
+        code = codegen.alme('0.0' if tipo == TokenType.REAL else '0', id_.valor)
+        self.code.append(code)
+
+        self._mais_var(tipo)
+
+    def _mais_var(self, tipo: TokenType):
         """
         Implementa <mais_var>
 
@@ -189,7 +202,7 @@ class Lexicon:
         token = self._next_token()
 
         if token == Token.simbolo(','):
-            self._variaveis()
+            self._variaveis(tipo)
         else:
             self.tape.pos = pos
 
