@@ -270,10 +270,10 @@ class Lexicon:
         """
         _logger.debug('<expressao>')
 
-        self._termo()
-        self._outros_termos()
+        termo = self._termo()
+        self._outros_termos(termo)
 
-    def _termo(self):
+    def _termo(self) -> Token:
         """
         Implementa <termo>
 
@@ -333,7 +333,7 @@ class Lexicon:
 
         return res
 
-    def _outros_termos(self):
+    def _outros_termos(self, termo: Token) -> Token:
         """
         Implementa <outros_termos>
 
@@ -341,18 +341,7 @@ class Lexicon:
         """
         _logger.debug('<outros_termos>')
 
-        res = []
-
-        while True:
-            with self.tape.context():
-                token = self._next_token()
-
-            if not has_token('+-', token):
-                return res
-
-            op = self._op_ad()
-            termo = self._termo()
-            res.append((op, termo))
+        return self.__do_add_or_mult('+-', termo, self._op_ad, self._termo)
 
     def _op_ad(self):
         """
@@ -374,37 +363,7 @@ class Lexicon:
         """
         _logger.debug('<mais_fatores>')
 
-        if fator.tipo == TokenType.IDENTIFICADOR:
-            if not self.symbols.has(fator):
-                raise CompilerSemanticError(f'Identificador desconhecido: {fator}')
-            type_ = self.symbols.typeof(fator)
-        elif fator.is_number:
-            type_ = fator.tipo
-        else:
-            raise CompilerSemanticError.invalid_token(fator)
-
-        esq = fator
-
-        while True:
-            with self.tape.context():
-                token = self._next_token()
-
-            if not has_token('*/', token):
-                return esq
-
-            op = self._op_mul()
-            dir_ = self._fator()
-
-            if not self.same_types(esq, dir_):
-                msg = (
-                    'Operação não é permitida entre tipos diferentes '
-                    f'(<{self.typeof(esq).name}> e <{self.typeof(dir_).name}>):\n'
-                    f'\t{esq!r} {op} {dir_!r}\n')
-                raise CompilerSemanticError(msg)
-
-            t = self.symbols.make_temp(type_)
-            codegen.base(op, esq, dir_, t)
-            esq = t
+        return self.__do_add_or_mult('*/', fator, self._op_mul, self._fator)
 
     def _op_mul(self) -> str:
         """
@@ -441,3 +400,42 @@ class Lexicon:
 
         self.validate_var(var)
         return self.symbols.typeof(var)
+
+    def __do_add_or_mult(
+            self,
+            symbols: iter,
+            token: Token,
+            fn_op,
+            fn_dir
+    ) -> Token:
+        if token.tipo == TokenType.IDENTIFICADOR:
+            if not self.symbols.has(token):
+                raise CompilerSemanticError(f'Identificador desconhecido: {token}')
+            type_ = self.symbols.typeof(token)
+        elif token.is_number:
+            type_ = token.tipo
+        else:
+            raise CompilerSemanticError.invalid_token(token)
+
+        esq = token
+
+        while True:
+            with self.tape.context():
+                next_token = self._next_token()
+
+            if not has_token(symbols, next_token):
+                return esq
+
+            op = fn_op()
+            dir_ = fn_dir()
+
+            if not self.same_types(esq, dir_):
+                msg = (
+                    'Operação não é permitida entre tipos diferentes '
+                    f'(<{self.typeof(esq).name}> e <{self.typeof(dir_).name}>):\n'
+                    f'\t{esq!r} {op} {dir_!r}\n')
+                raise CompilerSemanticError(msg)
+
+            t = self.symbols.make_temp(type_)
+            codegen.base(op, esq, dir_, t)
+            esq = t
