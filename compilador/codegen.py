@@ -30,5 +30,9 @@ def jf(arg1, arg2):
     return base('JF', arg1, arg2)
 
 
+def uminus(arg1, res):
+    return base('uminus', arg1, res=res)
+
+
 def para():
     return base('PARA')
