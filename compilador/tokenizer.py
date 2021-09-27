@@ -57,6 +57,8 @@ class Tokenizer:
         c = self.tape.next_char()
         if not self.tape.is_num():
             raise CompilerSyntaxError.simples('dígito', repr(c))
+
+        self._token_val += c
         return self._state3()
 
     def _state3(self):
