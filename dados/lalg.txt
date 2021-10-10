@@ -1,3 +1,5 @@
+- Comentários na LALG: entre { } ou /* */
+
 <programa>      ->  program ident <corpo> .
 
 <corpo>         ->  <dc> begin <comandos> end
@@ -15,6 +17,7 @@
 
 <variaveis>     ->  ident <mais_var>
 
+
 <mais_var>      ->  , <variaveis>
                 |   λ
 
@@ -27,7 +30,8 @@
                 |   write (ident)
                 |   ident := <expressao>
                 |   if <condicao> then <comandos> <pfalsa> $
-							
+                |   while <condicao> do <comandos> $
+
 <condicao>      ->  <expressao> <relacao> <expressao>
 
 <relacao>       ->  =
