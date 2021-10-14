@@ -15,6 +15,8 @@ class Keywords(Enum):
     IF = Token.identificador('if')
     THEN = Token.identificador('then')
     ELSE = Token.identificador('else')
+    WHILE = Token.identificador('while')
+    DO = Token.identificador('do')
 
     def wrong_token_err(self, token: Token):
         return CompilerSyntaxError.simples(self.value, token)
