@@ -7,6 +7,7 @@ class TokenType(Enum):
     REAL = auto()
     SIMBOLO = auto()
     WHITESPACE = auto()
+    COMMENT = auto()
 
 
 class Token:
@@ -55,3 +56,7 @@ class Token:
     @classmethod
     def whitespace(cls, valor):
         return cls(TokenType.WHITESPACE, valor)
+
+    @classmethod
+    def comentario(cls, valor):
+        return cls(TokenType.COMMENT, valor)

@@ -46,6 +46,8 @@ class Lexicon:
     def _next_token(self, skip_whitespace=True):
         while True:
             token = self.tokenizer.next_token()
+            if token.tipo == TokenType.COMMENT:
+                continue
             if not skip_whitespace or token.tipo != TokenType.WHITESPACE:
                 _logger.debug(token)
                 return token
