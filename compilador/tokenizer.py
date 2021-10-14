@@ -6,6 +6,12 @@ from .token import Token
 
 
 _logger = logging.getLogger(__name__)
+_logger.setLevel(logging.INFO)
+
+comment_delimiters = {
+    '{': '}',
+    '/*': '*/'
+}
 
 
 class Tokenizer:
@@ -27,7 +33,7 @@ class Tokenizer:
             return self._state1()
         elif self.tape.is_letra():
             return self._state4()
-        elif c in set('=$()+-*/.;,'):
+        elif c in set('=$()+-*.;,'):
             return self._state5()
         elif c in set('>:'):
             return self._state6()
@@ -35,6 +41,10 @@ class Tokenizer:
             return self._state7()
         elif c in set(' \t\r\n'):
             return self._state8()
+        elif c == '/':
+            return self._state9()
+        elif c == '{':
+            return self._state10()
 
         raise CompilerSyntaxError(f"Caractere ilegal: {c!r}")
 
@@ -114,8 +124,30 @@ class Tokenizer:
         token = Token.whitespace(self._token_val)
         return self._end_state(token)
 
+    def _state9(self):
+        _logger.debug('state 9')
+
+        if self.tape.get_char(1) == '*':
+            self._token_val += self.tape.next_char()
+            return self._state10()
+        else:
+            return self._state5()
+
+    def _state10(self):
+        _logger.debug('state 10')
+
+        delimiter = comment_delimiters[self._token_val]
+
+        while not all(self.tape.get_char(i + 1) == d for i, d in enumerate(delimiter)):
+            self._token_val += self.tape.next_char()
+
+        self._token_val += delimiter
+        self.tape.pos += len(delimiter)
+        token = Token.comentario(self._token_val)
+        return self._end_state(token)
+
     def _end_state(self, token: Token):
-        _logger.debug(token)
+        _logger.info(token)
         self.state = 0
         self._token_val = None
         self.tape.next()
