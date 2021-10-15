@@ -15,9 +15,10 @@ def normalize_name(name):
 
 
 class Symbol:
-    def __init__(self, name, type_: TokenType):
+    def __init__(self, name, type_: TokenType, data=None):
         self.name = normalize_name(name)
         self.type = type_
+        self.data = data  # extra data
 
     def __str__(self):
         return repr(self.name)
@@ -56,7 +57,9 @@ class SymbolsTable:
         if self.has(name):
             raise CompilerSemanticError(f'Redeclaração de variável {name!r}')
 
-        self.symbols[name] = Symbol(name, type_)
+        symbol = Symbol(name, type_)
+        self.symbols[name] = symbol
+        return symbol
 
     def make_temp(self, type_: TokenType) -> Token:
         while self.has(f't{self._tmp_id}'):
