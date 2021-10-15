@@ -239,13 +239,13 @@ class ObjectLexicon:
             else:
                 self.compiler.write(symb)
         elif token == Keywords.IF:
-            cond = self._condicao()
+            self._condicao()
 
             token = self._next_token()
             if not token == Keywords.THEN:
                 raise Keywords.THEN.wrong_token_err(token)
 
-            self.compiler.if_(cond)
+            self.compiler.if_()
             self._comandos()
             self._pfalsa()
             self.compiler.close_if()
@@ -253,13 +253,14 @@ class ObjectLexicon:
             token = self._next_token()
             validate_symbol(token, '$')
         elif token == Keywords.WHILE:
-            cond = self._condicao()
+            self.compiler.while_()
+            self._condicao()
 
             token = self._next_token()
             if not token == Keywords.DO:
                 raise Keywords.DO.wrong_token_err(token)
 
-            self.compiler.while_(cond)
+            self.compiler.do_()
             self._comandos()
             self.compiler.close_while()
 

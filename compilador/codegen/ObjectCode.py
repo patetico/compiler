@@ -20,15 +20,22 @@ opcodes = {
 }
 
 
+def mkcode(op, arg):
+    return f'{op.upper()} {arg}'
+
+
 class ObjectCode:
     def __init__(self):
         self.code = []
         self.symbol_pos = 0
         self.symbols = dict()
+        self._if_stack = []
+        self._while_stack = []
 
     def _push(self, op: str, arg=''):
-        _logger.debug(f'{op.upper()} {arg}')
-        self.code.append(f'{op.upper()} {arg}')
+        code = mkcode(op, arg)
+        _logger.debug(code)
+        self.code.append(code)
 
     def inpp(self):
         self._push('INPP')
@@ -63,20 +70,38 @@ class ObjectCode:
     def op(self, op):
         self._push(opcodes[op])
 
-    def if_(self, cond):
-        pass
+    def __pop_if_stack(self):
+        line, op = self._if_stack.pop()
+        next_line = len(self.code)
+        self.code[line] = mkcode(op, next_line)
+
+    def if_(self):
+        line = len(self.code)
+        self.code.append(None)
+        self._if_stack.append((line, 'DSVF'))
 
     def else_(self):
-        pass
+        line = len(self.code)
+        self.code.append(None)
+        self.__pop_if_stack()
+        self._if_stack.append((line, 'DSVI'))
 
     def close_if(self):
-        pass
+        self.__pop_if_stack()
 
-    def while_(self, cond):
-        pass
+    def while_(self):
+        line = len(self.code)
+        self._while_stack.append([line, None])
+
+    def do_(self):
+        self._while_stack[-1][1] = len(self.code)
+        self.code.append(None)
 
     def close_while(self):
-        pass
+        l1, l2 = self._while_stack.pop()
+        self._push('DSVI', l1)
+        next_line = len(self.code)
+        self.code[l2] = mkcode('DSVF', next_line)
 
     def assign(self, var: Symbol):
         self._push('ARMZ', var.data)
