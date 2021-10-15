@@ -1,4 +1,5 @@
 import logging
+from typing import Any
 
 from ._base import CodeGenerator
 from ..symbols_table import normalize_name
@@ -8,7 +9,7 @@ from ..token import Token
 _logger = logging.getLogger(__name__)
 
 
-def _reduce_to_arg(var) -> str:
+def _reduce_to_arg(var: Any) -> str:
     if isinstance(var, Token) and var.is_number:
         return var.valor
 
@@ -18,7 +19,7 @@ def _reduce_to_arg(var) -> str:
     return normalize_name(var)
 
 
-def base(op, arg1='', arg2='', res=''):
+def base(op, arg1: Any = '', arg2: Any = '', res: Any = ''):
     arg1 = _reduce_to_arg(arg1)
     arg2 = _reduce_to_arg(arg2)
     res = _reduce_to_arg(res)
@@ -31,6 +32,9 @@ class IntermediateCode(CodeGenerator):
     def __init__(self):
         super().__init__()
         self._if_stack = []
+
+    def inpp(self, ident: Token):
+        pass
 
     def __pop_stack(self):
         line, cond = self._if_stack.pop()

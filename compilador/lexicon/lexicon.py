@@ -2,6 +2,7 @@ import logging
 
 from .helpers import has_token, validate_ident, validate_symbol
 from .keywords import Keywords
+# noinspection PyProtectedMember
 from ..codegen._base import CodeGenerator
 from ..errors import CompilerSemanticError, CompilerSyntaxError
 from ..symbols_table import SymbolsTable
@@ -68,7 +69,8 @@ class Lexicon:
         if not token == Keywords.PROGRAM.value:
             raise Keywords.PROGRAM.wrong_token_err(token)
 
-        self._get_ident()
+        ident = self._get_ident()
+        self.compiler.inpp(ident)
 
         self._corpo()
 

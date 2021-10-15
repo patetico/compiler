@@ -8,6 +8,14 @@ class CodeGenerator(ABC):
         self.code = []
 
     @abstractmethod
+    def op(self, op, arg1='', arg2='', res=''):
+        pass
+
+    @abstractmethod
+    def inpp(self, ident: Token):
+        pass
+
+    @abstractmethod
     def alme(self, arg1, res):
         pass
 
