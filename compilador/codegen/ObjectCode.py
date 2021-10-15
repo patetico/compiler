@@ -4,7 +4,6 @@ from compilador.symbols_table import Symbol
 
 
 _logger = logging.getLogger(__name__)
-_logger.setLevel(logging.DEBUG)
 
 opcodes = {
     '/': 'DIVI',

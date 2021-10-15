@@ -14,3 +14,6 @@ if __name__ == '__main__':
     print('Finished parsing!')
     print('Generated code:\n')
     print('\n'.join(f'{line:>5} | {code}' for line, code in enumerate(code)))
+
+    print('\nExecuting...\n')
+    Interpreter(code, '> ').run()
