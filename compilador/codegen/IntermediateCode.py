@@ -1,7 +1,8 @@
 import logging
 
-from .symbols_table import normalize_name
-from .token import Token
+from ._base import CodeGenerator
+from ..symbols_table import normalize_name
+from ..token import Token
 
 
 _logger = logging.getLogger(__name__)
@@ -26,9 +27,9 @@ def base(op, arg1='', arg2='', res=''):
     return code
 
 
-class IntermediateCode:
+class IntermediateCode(CodeGenerator):
     def __init__(self):
-        self.code = []
+        super().__init__()
         self._if_stack = []
 
     def __pop_stack(self):

@@ -2,7 +2,7 @@ import logging
 
 from .helpers import has_token, validate_ident, validate_symbol
 from .keywords import Keywords
-from .. import codegen
+from ..codegen._base import CodeGenerator
 from ..errors import CompilerSemanticError, CompilerSyntaxError
 from ..symbols_table import SymbolsTable
 from ..tape import Tape
@@ -14,11 +14,11 @@ _logger = logging.getLogger(__name__)
 
 
 class Lexicon:
-    def __init__(self, filepath: str):
+    def __init__(self, filepath: str, compiler: CodeGenerator):
         self.tape = Tape(filepath)
         self.tokenizer = Tokenizer(self.tape)
         self.symbols = SymbolsTable()
-        self.code = codegen.IntermediateCode()
+        self.compiler = compiler
 
     def parse(self) -> [str]:
         self._programa()
@@ -29,7 +29,7 @@ class Lexicon:
         else:
             raise CompilerSyntaxError.simples('EOF', token)
 
-        return self.code.code
+        return self.compiler.code
 
     def validate_var(self, var):
         if not self.symbols.has(var):
@@ -74,7 +74,7 @@ class Lexicon:
 
         token = self._next_token()
         validate_symbol(token, '.')
-        self.code.para()
+        self.compiler.para()
 
     def _corpo(self):
         """
@@ -163,7 +163,7 @@ class Lexicon:
 
         id_ = self._get_ident()
         self.symbols.add(id_, tipo)
-        self.code.alme('0.0' if tipo == TokenType.REAL else '0', id_.valor)
+        self.compiler.alme('0.0' if tipo == TokenType.REAL else '0', id_.valor)
 
         self._mais_var(tipo)
 
@@ -231,9 +231,9 @@ class Lexicon:
             validate_symbol(token, ')')
 
             if fn == Keywords.READ:
-                self.code.read(id_.valor)
+                self.compiler.read(id_.valor)
             else:
-                self.code.write(id_.valor)
+                self.compiler.write(id_.valor)
         elif token == Keywords.IF:
             cond = self._condicao()
 
@@ -241,10 +241,10 @@ class Lexicon:
             if not token == Keywords.THEN:
                 raise Keywords.THEN.wrong_token_err(token)
 
-            self.code.if_(cond)
+            self.compiler.if_(cond)
             self._comandos()
             self._pfalsa()
-            self.code.close_if()
+            self.compiler.close_if()
 
             token = self._next_token()
             validate_symbol(token, '$')
@@ -255,9 +255,9 @@ class Lexicon:
             if not token == Keywords.DO:
                 raise Keywords.DO.wrong_token_err(token)
 
-            self.code.while_(cond)
+            self.compiler.while_(cond)
             self._comandos()
-            self.code.close_while()
+            self.compiler.close_while()
 
             token = self._next_token()
             validate_symbol(token, '$')
@@ -271,7 +271,7 @@ class Lexicon:
 
             termo = self._expressao()
             self.validate_same_type_op(ident, termo, op)
-            self.code.op(op, termo, res=ident)
+            self.compiler.op(op, termo, res=ident)
 
     def _condicao(self) -> Token:
         """
@@ -286,7 +286,7 @@ class Lexicon:
 
         self.validate_same_type_op(arg1, arg2, op)
         tmp = self.symbols.make_temp(self.typeof(arg1))
-        self.code.op(op, arg1, arg2, tmp)
+        self.compiler.op(op, arg1, arg2, tmp)
         return tmp
 
     def _relacao(self) -> str:
@@ -327,7 +327,7 @@ class Lexicon:
         if signal == '-':
             type_ = self.symbols.typeof(fator)
             t = self.symbols.make_temp(type_)
-            self.code.uminus(fator.valor, t.valor)
+            self.compiler.uminus(fator.valor, t.valor)
             fator = t
 
         return self._mais_fatores(fator)
@@ -429,7 +429,7 @@ class Lexicon:
             token = self._next_token()
             if token == Keywords.ELSE:
                 tape_state.unfreeze()
-                self.code.else_()
+                self.compiler.else_()
                 self._comandos()
 
     def same_types(self, var1, var2):
@@ -473,5 +473,5 @@ class Lexicon:
             self.validate_same_type_op(esq, dir_, op)
 
             t = self.symbols.make_temp(type_)
-            self.code.op(op, esq, dir_, t)
+            self.compiler.op(op, esq, dir_, t)
             esq = t
