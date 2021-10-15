@@ -214,7 +214,7 @@ class Lexicon:
                    |   write (ident)
                    |   ident := <expressao>
                    |   if <condicao> then <comandos> <pfalsa> $
-
+                   |   while <condicao> do <comandos> $
         """
         _logger.debug('<comando>')
 
@@ -245,6 +245,19 @@ class Lexicon:
             self._comandos()
             self._pfalsa()
             self.code.close_if()
+
+            token = self._next_token()
+            validate_symbol(token, '$')
+        elif token == Keywords.WHILE:
+            cond = self._condicao()
+
+            token = self._next_token()
+            if not token == Keywords.DO:
+                raise Keywords.DO.wrong_token_err(token)
+
+            self.code.while_(cond)
+            self._comandos()
+            self.code.close_while()
 
             token = self._next_token()
             validate_symbol(token, '$')

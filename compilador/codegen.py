@@ -60,7 +60,7 @@ class IntermediateCode:
     def uminus(self, arg1, res):
         return self.code.append(base('uminus', arg1, res=res))
 
-    def para(self, ):
+    def para(self):
         return self.code.append(base('PARA'))
 
     def if_(self, cond: Token):
@@ -76,3 +76,9 @@ class IntermediateCode:
 
     def close_if(self):
         self.__pop_stack()
+
+    def while_(self, cond: Token):
+        pass
+
+    def close_while(self):
+        pass
