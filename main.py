@@ -1,7 +1,6 @@
 import sys
 
-from compilador.codegen import IntermediateCode
-from compilador.lexicon.lexicon import Lexicon
+from compilador.lexicon.object_lexicon import ObjectLexicon
 
 
 if __name__ == '__main__':
@@ -10,7 +9,7 @@ if __name__ == '__main__':
     else:
         filepath = sys.argv[1]
 
-    code = Lexicon(filepath, IntermediateCode()).parse()
+    code = ObjectLexicon(filepath).parse()
 
     print('Finished parsing!')
     print('Generated code:\n')
