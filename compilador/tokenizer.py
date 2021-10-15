@@ -6,7 +6,6 @@ from .token import Token
 
 
 _logger = logging.getLogger(__name__)
-_logger.setLevel(logging.INFO)
 
 comment_delimiters = {
     '{': '}',

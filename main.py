@@ -1,4 +1,3 @@
-import logging
 import sys
 
 from compilador.codegen import IntermediateCode
@@ -11,7 +10,6 @@ if __name__ == '__main__':
     else:
         filepath = sys.argv[1]
 
-    logging.basicConfig()
     code = Lexicon(filepath, IntermediateCode()).parse()
 
     print('Finished parsing!')
